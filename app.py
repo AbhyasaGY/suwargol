@@ -136,9 +136,16 @@ def update_status(id):
 
 def init_db():
     try:
+        # Langkah 1: Konek ke server MySQL tanpa menyebut database
+        conn_server = pymysql.connect(host=DB_HOST, user=DB_USER, password=DB_PASS)
+        with conn_server.cursor() as cursor:
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}")
+        conn_server.commit()
+        conn_server.close()
+
+        # Langkah 2: Konek ke database yang baru saja dibuat untuk membuat tabel
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # 1. Buat Tabel Users
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -147,7 +154,6 @@ def init_db():
                     role ENUM('warga', 'admin') DEFAULT 'warga'
                 )
             """)
-            # 2. Buat Tabel Laporan
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS laporan_pengaduan (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -160,14 +166,13 @@ def init_db():
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             """)
-            # 3. Buat akun Admin bawaan (untuk testing)
             cursor.execute("""
                 INSERT IGNORE INTO users (username, password, role) 
                 VALUES ('admin', 'admin123', 'admin')
             """)
         conn.commit()
         conn.close()
-        print("Database berhasil diinisialisasi!")
+        print("Database dan tabel berhasil diinisialisasi!")
     except Exception as e:
         print(f"Gagal menginisialisasi database: {e}")
 
